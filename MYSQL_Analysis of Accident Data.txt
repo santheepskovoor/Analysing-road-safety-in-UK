@@ -1,0 +1,178 @@
+--Road_Safety _in UK
+
+--Accident_2015_Database creation
+
+create database Road_Safety_UK
+use Road_Safety_UK
+drop table Accidents_2015
+select * from Accidents_2015
+--Craete_table
+
+create table Accidents_2015 (Accident_Index varchar(100),
+							Location_Easting_OSGR integer,
+                            Location_Northing_OSGR integer,
+                            Longitude float,
+                            Latitude float,
+                            Police_Force integer,
+                            Accident_Severity integer,
+                            Number_of_Vehicles integer,
+                            Number_of_Casualties integer,
+                            `Date` varchar(50),
+                            Day_of_Week integer,
+                            `Time` time,
+                            Local_Authority_District int,
+                            Local_Authority_Highway varchar(500),
+                            First_Road_Class int,
+                            First_Road_Number int,
+                            Road_Type int,
+                            Speed_limit int,
+                            Junction_Detail int,
+                            Junction_Control int,
+                            second_Road_Class int,
+							second_Road_Number int,
+                            Pedestrian_Crossing_Human_Control int,
+                            Pedestrian_Crossing_Physical_Facilities int,
+                            Light_Conditions int,
+                            Weather_Conditions int,
+                            Road_Surface_Conditions int,
+                            Special_Conditions_at_Site int,
+                            Carriageway_Hazards int,
+                            Urban_or_Rural_Area int,
+							Police_Officer_Attend_Scene_Accident int,
+                            LSOA_of_Accident_Location varchar(500),
+                            primary key(Accident_Index)
+                            )
+ALTER TABLE Accidents_2015
+drop table Accidents_2015
+                            
+select * from Accidents_2015
+
+Set Session sql_mode =''
+
+--Upload_table_to_the_database
+ 
+load data infile
+'D:\Accidents_2015.csv'
+into table Accidents_2015
+fields terminated by ','
+enclosed by "'"
+lines terminated by '\n'
+ignore 1 rows 
+                            
+                            
+--Vehicle_database_creation
+drop table vehicle_types
+create table vehicle_types(`code` int,
+						label varchar(20))
+                        
+--Load_vehiclee_types_database
+load data infile
+'D:\vehicle_types.csv'
+into table vehicle_types
+fields terminated by ','
+enclosed by "'"
+lines terminated by '\n'
+ignore 1 rows
+
+select * from vehicle_types
+--Craeate_table_vehicle_types;
+
+drop table vehicle_2015
+create table vehicle_2015(Accident_Index varchar(30),
+							Vehicle_Reference int,
+							Vehicle_Type int,
+							Towing_and_Articulation	int,
+							Vehicle_Manoeuvre int,
+							Vehicle_Location_Restricted_Lane int,	
+							Junction_Location int,
+							Skidding_and_Overturning int,		
+							Hit_Object_in_Carriageway int,
+							Vehicle_Leaving_Carriageway int,
+							Hit_Object_off_Carriageway int,
+							First_Point_of_Impact int,
+							Was_Vehicle_Left_Hand_Drive int,
+							Journey_Purpose_of_Driver int,
+							Sex_of_Driver int,
+							Age_of_Driver int,
+							Age_Band_of_Driver int,	
+							Engine_Capacity_CC int,
+							Propulsion_Code int,
+							Age_of_Vehicle int,
+							Driver_IMD_Decile int,
+							Driver_Home_Area_Type int,	
+							Vehicle_IMD_Decile int
+                           )
+                            
+ALTER TABLE vehicle_2015
+ADD PRIMARY KEY (Accident_Index);
+
+select * from vehicle_2015
+
+--Load_table vehicle_2015
+load data infile
+'D:\vehicles_2015.csv'
+into table vehicle_2015
+fields terminated by ','
+enclosed by "'"
+lines terminated by '\n'
+ignore 1 rows
+
+----------------
+select * from vehicle_2015
+select * from vehicle_types
+select * from Accidents_2015
+
+show vehicle_2015()
+
+create table master_data1 as 
+select v.*,vc.*,ai.Location_Easting_OSGR,ai.Location_Northing_OSGR,ai.Longitude,ai.Latitude,ai.Police_Force,ai.Accident_Severity,ai.Number_of_Vehicles,ai.Number_of_Casualties,ai.Date,ai.Day_of_Week,ai.Time,ai.Local_Authority_District,ai.Local_Authority_Highway,ai.First_Road_Class,ai.First_Road_Number,ai.Road_Type,ai.Speed_limit,ai.Junction_Detail,ai.Junction_Control,ai.second_Road_Class,ai.second_Road_Number,ai.Pedestrian_Crossing_Human_Control,ai.Pedestrian_Crossing_Physical_Facilities,ai.Light_Conditions,ai.Weather_Conditions,ai.Road_Surface_Conditions,ai.Special_Conditions_at_Site,ai.Carriageway_Hazards,ai.Urban_or_Rural_Area,ai.Police_Officer_Attend_Scene_Accident,ai.LSOA_of_Accident_Location from vehicle_2015 as v
+left join vehicle_types as vc
+on v.Vehicle_Type =vc.code
+left join Accidents_2015 as ai
+on v.Accident_Index = ai.Accident_Index 
+
+select * from master_data1
+---Evaluate_the_median_severity_value_of_accidents_caused_by_various_Motorcycles
+
+with sev_mot as(with find_med as (
+select *
+,row_number() over(order by Accident_Severity asc) as sev_asc 
+,row_number() over(order by Accident_Severity desc) as sev_desc 
+from master_data1)
+select Accident_Severity,label from find_med
+where abs(sev_desc-sev_asc) >= 1
+order by Accident_Severity)
+select * from sev_mot
+where label in('Motorcycle 50cc and ','Motorcycle 125cc and','Motorcycle over 125c','Motorcycle over 500c','Electric motorcycle')
+
+
+---41442_is_the_total_count_of_motorcycle_based_accidents_by ascending_order_20721_is the_middle_row
+
+with median_Acci as
+(select Accident_Severity as avg_sev from master_data1 as avg_sev
+where label in('Motorcycle 50cc and ','Motorcycle 125cc and','Motorcycle over 125c','Motorcycle over 500c','Electric motorcycle')
+order by Accident_Severity
+limit 20720,3)
+select * from median_Acci limit 2,1
+
+--
+
+--Total_Accident_Severity
+select avg(Accident_Severity) from master_data1
+--Evaluate_Accident_Severity_and_Total_Accidents_per_Vehicle_Type
+
+select label, count(Accident_index) as Total_Accident ,avg(Accident_Severity) as average_Accident__Severity from master_data1 group by label
+
+--Calculate_the_Average_Severity_and_Total_Accidents_by_Motorcycle
+
+--Total_Accidents_By_Motorcycle
+select count(Accident_index)  from master_data1 
+where label in ('Motorcycle 125cc and','Motorcycle over 500c','Motorcycle 50cc and','Motorcycle over 125c','Motorcycle - unknown','Electric motorcycle')
+
+--Average_Accident_Severity_of_motorcycles
+
+select label,avg(Accident_Severity) from master_data1 
+where label in ('Motorcycle 125cc and','Motorcycle over 500c','Motorcycle 50cc and','Motorcycle over 125c','Motorcycle - unknown','Electric motorcycle')
+group by label
+
+
